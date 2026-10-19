@@ -93,6 +93,29 @@ double-posted. Status choices are limited to what your Kitsu role may set.
 Note: for movies, Kitsu serves its normalized `.mp4` rather than the
 originally uploaded file. Pictures and other files come back as uploaded.
 
+## Build the .exe
+
+```
+build.bat            # or: .venv\Scripts\python build.py
+```
+
+This produces `dist\KitsuIko.exe`, a single 42 MB file that runs without
+Python, with the icon and version 0.9 in its file properties. The build
+launches the new exe with a self-test (Qt, icon, Windows Credential Manager,
+HTTPS certificates, UI) and reports **PROBLEM** if anything is missing. To
+release a new version, change `kitsu_iko/__init__.py` and rebuild.
+
+Sharing it:
+* Just copy `KitsuIko.exe` anywhere and double-click it. Each person signs in
+  with their own Kitsu account. Settings and the saved password are stored
+  per Windows user, not next to the exe.
+* The exe isn't code-signed, so on other PCs Windows SmartScreen may say
+  "Windows protected your PC": click **More info → Run anyway**. Some
+  antivirus tools are wary of unsigned PyInstaller apps. A code-signing
+  certificate removes both problems.
+* Startup takes a second or two, because the exe unpacks itself to a
+  temporary folder each time it starts.
+
 ## Development
 
 ```
@@ -108,6 +131,7 @@ originally uploaded file. Pictures and other files come back as uploaded.
 | `kitsu_iko/demo_service.py` | in-memory fake server for `--demo` |
 | `kitsu_iko/upload_tab.py`, `download_tab.py` | the two tabs |
 | `kitsu_iko/widgets.py`, `login.py`, `workers.py`, `app.py` | shared UI, sign-in, threading, main window |
+| `build.py`, `build.bat`, `kitsu_iko_main.py` | packaging into `dist\KitsuIko.exe` |
 
 Uploads run 3 at a time (`workers.TRANSFER_POOL`) because each preview makes
 the server transcode. gazu sends each upload in a single request, so the

@@ -1,0 +1,3 @@
+Releasing a new version: change the number in kitsu_iko/__init__.py, then double-click build.bat. It rebuilds dist\KitsuIko.exe and repeats the self-test, ending with OK or PROBLEM.
+
+The build\ folder only holds temporary build files and can be deleted. run.bat still works for running from source.

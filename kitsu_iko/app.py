@@ -22,7 +22,9 @@ from .widgets import settings
 from .workers import TRANSFER_POOL, run_async
 
 APP_NAME = "Kitsu Iko"
-ICON_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Iko_ico.ico")
+# In the packaged .exe, bundled files live in PyInstaller's unpack folder.
+_BASE_DIR = getattr(sys, "_MEIPASS", None) or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ICON_PATH = os.path.join(_BASE_DIR, "Iko_ico.ico")
 
 
 class MainWindow(QMainWindow):
@@ -161,7 +163,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="kitsu_iko", description="Bulk upload/download for Kitsu")
     parser.add_argument("--demo", action="store_true", help="run against an in-memory fake Kitsu")
     parser.add_argument("--version", action="version", version=f"{APP_NAME} {__version__}")
+    # Checks a packaged build end to end (no console in the .exe, so results
+    # go to a file). Used by build.py; also handy when a build misbehaves.
+    parser.add_argument("--selftest", metavar="REPORT.json", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
+    if args.selftest:
+        return selftest(args.selftest)
 
     if sys.platform == "win32":
         # Give the app its own taskbar identity; otherwise Windows groups it
@@ -194,6 +201,56 @@ def main(argv: list[str] | None = None) -> int:
     win.show()
     QTimer.singleShot(0, win.begin)
     return app.exec()
+
+
+def selftest(report_path: str) -> int:
+    """Exercise what a frozen build can lose: Qt plugins, the icon, the
+    keychain backend, the HTTPS certificate bundle, and the demo UI."""
+    import json
+    import time
+
+    import certifi
+    import gazu
+    import keyring
+
+    report: dict = {"version": __version__, "frozen": bool(getattr(sys, "frozen", False))}
+    try:
+        report["icon"] = os.path.exists(ICON_PATH)
+        report["certifi_bundle"] = os.path.exists(certifi.where())
+        report["gazu"] = gazu.__version__
+        report["keyring_backend"] = type(keyring.get_keyring()).__name__
+        try:
+            keyring.set_password("kitsu-iko-selftest", "probe", "ok")
+            report["keyring_roundtrip"] = keyring.get_password("kitsu-iko-selftest", "probe") == "ok"
+            keyring.delete_password("kitsu-iko-selftest", "probe")
+        except Exception as exc:
+            report["keyring_roundtrip"] = f"error: {exc}"
+        app = QApplication(sys.argv[:1])
+        report["qt_platform"] = app.platformName()
+        app.setWindowIcon(QIcon(ICON_PATH))
+        report["icon_loaded"] = not app.windowIcon().isNull()
+        from .demo_service import DemoService
+
+        win = MainWindow(DemoService())
+        win.show()
+        win.begin()
+        end = time.time() + 5
+        while time.time() < end and win.upload.context_bar.project_cb.count() < 2:
+            app.processEvents()
+            time.sleep(0.02)
+        report["demo_ui_projects"] = win.upload.context_bar.project_cb.count() - 1
+        report["title"] = win.windowTitle()
+        win.close()
+        report["ok"] = (report["icon"] and report["certifi_bundle"] and report["keyring_roundtrip"] is True
+                        and report["icon_loaded"] and report["demo_ui_projects"] > 0)
+    except Exception as exc:
+        import traceback
+
+        report["ok"] = False
+        report["error"] = "".join(traceback.format_exception(exc))
+    with open(report_path, "w", encoding="utf-8") as fh:
+        json.dump(report, fh, indent=1)
+    return 0 if report["ok"] else 1
 
 
 if __name__ == "__main__":
