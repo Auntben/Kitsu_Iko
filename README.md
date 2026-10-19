@@ -3,6 +3,9 @@
 Desktop tool for bulk upload and download against a self-hosted Kitsu (CGWire)
 server. Built with Python, PyQt6 and [gazu](https://github.com/cgwire/gazu).
 
+## Disclaimer
+This app was made with Claude Code. It is open for anyone to use or tweak and will remain this way. 
+
 ## Run
 
 ```
