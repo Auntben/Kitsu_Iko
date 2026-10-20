@@ -141,3 +141,34 @@ the server transcode. gazu sends each upload in a single request, so the
 progress bar reaches the end before the server has finished ("finishing..."),
 and each running upload holds its file in memory. Keep that in mind for
 multi-GB files.
+
+## To do
+
+### Features
+- [ ] **Image-sequence detection.** Recognise `shot_v003.0001.exr … .0240.exr`
+  as one item instead of hundreds of files. Today, dropping a render folder
+  posts every frame as a preview in one comment. Offer a choice: send the
+  sequence as a zip attachment, send a single frame, or skip it with a warning.
+- [ ] **Download the original movie file.** Kitsu currently returns its
+  converted `.mp4` instead of the uploaded file. First check whether the
+  server keeps the originals.
+- [ ] **"Open in Kitsu".** A right-click action on any row, in either tab, that
+  opens that shot or asset's task in the browser.
+- [ ] **Saved upload presets.** Named presets (e.g. "Anim dailies → WFA,
+  Revision, comment 'Blocking {version}'") that set the upload defaults in one
+  click.
+- [ ] **Show the next revision number in the review screen.** E.g. "SH020 will
+  become v006", so a wrong shot is caught before anything is sent.
+- [ ] **Remember the download destination per project.**
+- [ ] **Drop files onto a row** in the upload table to assign them straight to
+  that shot or asset.
+
+### Testing on the real server
+- [ ] **Test with an artist account.** Check that:
+  - the project list shows the artist's projects
+  - the status list only offers statuses artists may set
+  - uploads post correctly
+  - **Undo upload** can delete the artist's own comments, or, if Kitsu refuses,
+    marks them FAILED cleanly
+- [x] Upload and download of revisions and attachments (manager, Zou 1.0.58)
+- [x] Undo upload (manager)
